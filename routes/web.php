@@ -18,7 +18,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     //handle concessions
-    Route::post('/admin/view-concessions', [ConcessionsController::class, 'view'])->name('concession.view');
+    Route::get('/admin/view-concessions', [ConcessionsController::class, 'show'])->name('concession.view');
+    Route::get('/admin/add-concessions', [ConcessionsController::class, 'add'])->name('concession.add');
+    Route::post('/admin/add-concessions', [ConcessionsController::class, 'store'])->name('concession.store');
+    Route::get('concession/{id}/edit', [ConcessionsController::class, 'edit'])->name('concession.edit');
+    Route::put('concession/{id}', [ConcessionsController::class, 'update'])->name('concession.update');
+
 });
 
 require __DIR__.'/auth.php';

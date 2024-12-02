@@ -327,16 +327,26 @@ return [
             'label' => 4,
             'label_color' => 'success',
         ],
-        ['header' => 'account_settings'],
+        // ['header' => 'account_settings'],
         [
-            'text' => 'concessions',
+            'text' => 'Concession Management',
             'url' => 'admin/view-concessions',
             'icon' => 'fas fa-fw fa-user',
         ],
         [
-            'text' => 'change_password',
+            'text' => 'Order Management',
             'url' => 'admin/settings',
             'icon' => 'fas fa-fw fa-lock',
+            'submenu' => [
+                [
+                    'text' => 'Add Order',
+                    'url' => 'admin/add-order',
+                ],
+                [
+                    'text' => 'View Orders',
+                    'url' => '#',
+                ]
+            ]
         ],
         [
             'text' => 'multilevel',

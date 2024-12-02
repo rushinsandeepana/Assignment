@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ConcessionsController;
+use App\Http\Controllers\OrderManagementController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -23,6 +24,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/admin/add-concessions', [ConcessionsController::class, 'store'])->name('concession.store');
     Route::get('concession/{id}/edit', [ConcessionsController::class, 'edit'])->name('concession.edit');
     Route::put('concession/{id}', [ConcessionsController::class, 'update'])->name('concession.update');
+    Route::delete('/concession/{id}', [ConcessionsController::class, 'delete'])->name('concession.delete');
+
+    //handle order management
+    Route::get('/admin/add-order', [OrderManagementController::class, 'add'])->name('order.add');
+    Route::get('/admin/add-order', [OrderManagementController::class, 'index'])->name('order.index');
+    // Route::post('/admin/order/store', [OrderManagementController::class, 'create'])->name('order.create');
+    Route::post('/orders', [OrderManagementController::class, 'create'])->name('order.store');
 
 });
 

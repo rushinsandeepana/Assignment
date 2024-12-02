@@ -17,6 +17,7 @@ return new class extends Migration
             $table->decimal('amount', 10, 2);
             $table->date('kitchen_date');
             $table->time('kitchen_time');
+            $table->tinyInteger('status')->default(0)->comment('0: Pending, 1: In-Progress, 2: Completed');
             $table->timestamps();
         });
     }

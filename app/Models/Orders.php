@@ -12,6 +12,7 @@ class Orders extends Model
         'amount',
         'kitchen_date',
         'kitchen_time',
+        'status'
     ];
 
     public function levelOne()

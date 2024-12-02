@@ -63,7 +63,7 @@
                                         <th>Action</th>
                                     </tr>
                                 </thead>
-                                <tbody id="summaryItems"></tbody>
+                                <tbody id="summaryItems" required></tbody>
                             </table>
                         </div>
                         <a href="#" class="text-primary" id="showMoreLink" style="display:none;">Show More</a>
@@ -72,7 +72,7 @@
                     <!-- Kitchen Time Section -->
                     <div class="mb-4">
                         <h5>Kitchen Time</h5>
-                        <input type="datetime-local" name="kitchen_time" class="form-control">
+                        <input type="datetime-local" name="kitchen_time" class="form-control" required>
                     </div>
 
                     <!-- Total Amount Section -->
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 if (data.success) {
                     alert('Order created successfully!');
-                    window.location.href = `/orders/${data.order_id}`;
+                    window.location.href = data.redirect_url;
                 } else {
                     alert('Failed to create order!');
                 }

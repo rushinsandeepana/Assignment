@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ConcessionsController;
+use App\Http\Controllers\KitchenManagementController;
 use App\Http\Controllers\OrderManagementController;
 use Illuminate\Support\Facades\Route;
 
@@ -9,7 +10,7 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/orders', function () {
+Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -29,8 +30,13 @@ Route::middleware('auth')->group(function () {
     //handle order management
     Route::get('/admin/add-order', [OrderManagementController::class, 'add'])->name('order.add');
     Route::get('/admin/add-order', [OrderManagementController::class, 'index'])->name('order.index');
-    // Route::post('/admin/order/store', [OrderManagementController::class, 'create'])->name('order.create');
     Route::post('/orders', [OrderManagementController::class, 'create'])->name('order.store');
+    Route::get('/orders', [OrderManagementController::class, 'viewAll'])->name('order.view');
+
+    //handle kitchen management
+    Route::get('/kitchen-view', [KitchenManagementController::class, 'view'])->name('kitchen.view');
+    Route::post('/send-orders', [KitchenManagementController::class, 'sendToKitchen']);
+    Route::post('/order/{orderId}/complete', [KitchenManagementController::class, 'toggleStatus'])->name('order.complete');
 
 });
 

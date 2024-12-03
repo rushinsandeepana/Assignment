@@ -12,15 +12,18 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Item Selection Section -->
-        <div class="col-sm-8">
+        <div class="col-sm-8"
+            style="max-height: 600px; overflow-y: auto; border: 1px solid #ccc; scrollbar-width: none; -ms-overflow-style: none;">
             <div class="container my-3">
                 <!-- Card 1: Item Listing -->
                 @foreach ($items as $item)
                 <div class="row bg-white mb-3 mt-3 border border-dark" style="height: 120px;">
                     <div class="col">
                         <img src="{{ $item->image ? asset('storage/' . $item->image) : asset('assets/default-image.jpg') }}"
-                            class="img-fluid w-100 h-100" alt="Full-size image">
+                            class="img-fluid" alt="Full-size image"
+                            style="width: 300px; height: 118px; object-fit: cover;">
                     </div>
+
                     <div class="col d-flex align-items-center justify-content-center text-4xl font-weight-bold">
                         {{ $item->name }}
                     </div>
@@ -47,7 +50,8 @@
         <div class="col-sm-4">
             <form action="{{ route('order.store') }}" method="POST" enctype="multipart/form-data" id="order-form">
                 @csrf
-                <div class="bg-secondary p-4 rounded shadow-sm bg-opacity-25">
+                <div class="bg-secondary p-4 rounded shadow-sm bg-opacity-25"
+                    style="max-height: 600px; overflow-y: auto; border: 1px solid #ccc; scrollbar-width: none; -ms-overflow-style: none;">
                     <h3 class="text-center mb-4">Order Summary</h3>
 
                     <!-- Items Summary Table -->

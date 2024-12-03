@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LevelOne;
 use App\Models\Orders;
 use Carbon\Carbon;
-
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class KitchenManagementController extends Controller
@@ -24,23 +24,35 @@ class KitchenManagementController extends Controller
             }
         }
 
-        return view('admin.orders', compact('orders'));
+        return view('order_managment.view', compact('orders'));
     }
 
     public function sendToKitchen(Request $request)
     {
-        $orderIds = $request->input('order_ids');
-        
-        foreach ($orderIds as $orderId) {
-            $order = Orders::find($orderId);
-            
-            if ($order && $order->status == 0) {
-                $order->status = 1;
-                $order->save(); 
-            }
+        $orderIds = $request->input('order_ids', []);
+    
+        // Validate orders
+        if (empty($orderIds)) {
+            return response()->json(['success' => false, 'message' => 'No orders provided.']);
         }
-        
-        return response()->json(['success' => true]);
+    
+        // Update orders in bulk to "In Progress" status
+        $updatedCount = Orders::whereIn('id', $orderIds)
+            ->where('status', '!=', 1) // Optional: Update only if not already "In Progress"
+            ->update(['status' => 1]);
+    
+        if ($updatedCount > 0) {
+            return response()->json([
+                'success' => true,
+                'message' => "$updatedCount orders sent to the kitchen.",
+                'updated_orders' => $orderIds
+            ]);
+        }
+    
+        return response()->json([
+            'success' => false,
+            'message' => 'No valid orders to update. They might already be in progress or not found.'
+        ]);
     }
 
     public function view()
@@ -58,9 +70,8 @@ class KitchenManagementController extends Controller
             )->whereIn('orders.status', [1, 2]) 
             ->get();
     
-        // Group concessions by order
         $groupedOrders = $orders->groupBy('order_id')->map(function ($items) {
-            $order = $items->first(); // Get common order details
+            $order = $items->first();
             return [
                 'order_id' => $order->order_id,
                 'order_code' => $order->order_code,
@@ -74,7 +85,7 @@ class KitchenManagementController extends Controller
                     ];
                 })->toArray(),
             ];
-        });
+        })->toArray();
     
         // dd($groupedOrders);
     
@@ -85,8 +96,8 @@ class KitchenManagementController extends Controller
 {
     $order = Orders::find($orderId);
 
-    if ($order && $order->status == 1) {  // Only allow marking as completed if the order is "In Progress"
-        $order->status = 2; // Mark as "Completed"
+    if ($order && $order->status == 1) {
+        $order->status = 2;
         $order->save();
         return redirect()->back()->with('success', 'Order marked as completed.');
     }

@@ -18,8 +18,7 @@
         <div class="col-md-4 mb-4">
             <div class="card shadow-lg">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Order ID :
-                        {{ $order['order_code'] ?? 'N/A' }}</h5>
+                    <h5 class="card-title mb-0">Order ID: {{ $order['order_code'] ?? 'N/A' }}</h5>
                 </div>
                 <div class="card-body">
                     <p><strong>Concessions:</strong></p>
@@ -47,15 +46,13 @@
                         </span>
                     </p>
                 </div>
-
-                <!-- Checkbox for sending orders to kitchen -->
                 <label class="position-absolute" style="bottom: 10px; right: 10px; cursor: pointer;">
                     <input type="checkbox" style="display: none;" class="roundCheckbox"
                         data-order-id="{{ $order['order_id'] }}">
                     <span class="checkbox-circle"
-                        style="display: inline-block;width: 40px;height: 40px;background-color: #007bff;border-radius: 50%;position: relative;border: none;transition: background-color 0.3s ease;">
+                        style="display: inline-block;width: 40px;height: 40px;background-color: #f2efea;border-radius: 50%;position: relative;border: none;transition: background-color 0.3s ease;">
                         <span
-                            style="content: '\f067';font-family: 'Font Awesome 5 Free';font-weight: 900;color: white;font-size: 20px;position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);">&#xf067;</span>
+                            style="content: '\f067';font-family: 'Font Awesome 5 Free';font-weight: 900;color: #0d6efd;font-size: 20px;position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);">&#xf067;</span>
                     </span>
                 </label>
             </div>
@@ -70,76 +67,91 @@
 
 @section('js')
 <script>
-// Select checkboxes and send orders button
-const checkboxes = document.querySelectorAll('.roundCheckbox');
-const sendOrdersButton = document.getElementById('sendOrdersButton');
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.roundCheckbox');
+    const orders = @json($orders); // Laravel blade variable
+    console.log("Is orders an array?", Array.isArray(orders));
+    console.log("Orders type:", typeof orders);
 
-// Automatically send orders where kitchen time equals current time
-window.addEventListener('DOMContentLoaded', (event) => {
-    const currentTime = new Date().toISOString(); // Current time in ISO format
-    const orders = @json($orders); // Pass orders from the backend to JavaScript
-
-    orders.forEach(order => {
-        const kitchenTime = order.kitchen_time ? new Date(order.kitchen_time).toISOString() : null;
-
-        if (kitchenTime && kitchenTime === currentTime) {
-            sendToKitchen(order.order_id); // Send order to kitchen if times match
-        }
-    });
-});
-
-// Send selected orders to kitchen on button click
-sendOrdersButton.addEventListener('click', function() {
-    const selectedOrders = [];
-
-    checkboxes.forEach((checkbox) => {
-        if (checkbox.checked) {
-            selectedOrders.push(checkbox.getAttribute('data-order-id'));
-        }
-    });
-
-    if (selectedOrders.length > 0) {
-        sendToKitchen(selectedOrders);
-    } else {
-        alert('Please select at least one order.');
-    }
-});
-
-// Function to send orders to the kitchen and update status to "In Progress"
-function sendToKitchen(orderIds) {
-    fetch('/send-orders', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                order_ids: Array.isArray(orderIds) ? orderIds : [orderIds]
+    // Function to automatically send orders to the kitchen
+    function sendToKitchen(orderIds) {
+        fetch('/send-orders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+                        'content')
+                },
+                body: JSON.stringify({
+                    order_ids: Array.isArray(orderIds) ? orderIds : [orderIds]
+                })
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Selected orders have been sent to the kitchen.');
-                // Optionally, update the UI status of orders here
+            .then(response => response.json())
+            .then(data => {
+                // No alert needed, orders sent automatically
+                checkboxes.forEach((checkbox) => {
+                    const orderId = checkbox.getAttribute('data-order-id');
+                    if (orderIds.includes(orderId)) {
+                        checkbox.disabled = true;
+                        const card = checkbox.closest('.card');
+                        card.style.opacity = '0.6';
+                        card.style.pointerEvents = 'none';
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error sending orders:', error);
+            });
+    }
+
+    function autoSendOrders() {
+        const currentTime = new Date();
+        const currentTimeString = currentTime.toISOString().slice(0, 16);
+        console.log("Current Time:", currentTimeString);
+
+        Object.keys(orders).forEach(orderKey => {
+            const order = orders[orderKey];
+
+            let kitchenTime = null;
+            if (order.kitchen_time) {
+                if (order.kitchen_time.length <= 8) {
+                    const currentDate = currentTime.toISOString().slice(0, 10);
+                    order.kitchen_time = `${currentDate}T${order.kitchen_time}`;
+                }
+
+                const parsedKitchenTime = new Date(order.kitchen_time);
+                if (!isNaN(parsedKitchenTime)) {
+                    kitchenTime = parsedKitchenTime.toISOString().slice(0, 16);
+                } else {
+                    console.warn(
+                        `Invalid kitchen time for Order ID ${order.order_id}: ${order.kitchen_time}`
+                    );
+                }
             }
-        })
-        .catch(error => {
-            console.error('Error sending orders:', error);
+
+            console.log("Kitchen Time for Order ID " + order.order_id + ":", kitchenTime);
+
+            if (kitchenTime && kitchenTime === currentTimeString) {
+                order.status = 1; // Update the order status to 'sent_to_kitchen'
+
+                // Send the order to the kitchen automatically
+                sendToKitchen(order.order_id);
+
+                // Disable checkbox and update card UI
+                const checkbox = document.querySelector(
+                    `.roundCheckbox[data-order-id="${order.order_id}"]`);
+                if (checkbox) {
+                    checkbox.disabled = true;
+                    const card = checkbox.closest('.card');
+                    card.style.opacity = '0.6';
+                    card.style.pointerEvents = 'none';
+                }
+            }
         });
-}
+    }
 
-// Toggle the checkbox background color
-checkboxes.forEach((checkbox) => {
-    const checkboxCircle = checkbox.nextElementSibling;
-
-    checkbox.addEventListener('change', function() {
-        if (checkbox.checked) {
-            checkboxCircle.style.backgroundColor = '#28a745'; // Green when checked
-        } else {
-            checkboxCircle.style.backgroundColor = '#007bff'; // Blue when unchecked
-        }
-    });
+    // Check orders every minute
+    setInterval(autoSendOrders, 60000);
 });
 </script>
 @endsection

@@ -11,8 +11,8 @@
 @section('content')
 <div class="container-fluid">
     <div class="row">
-        <!-- Item Selection Section -->
-        <div class="col-sm-8" style="max-height: 600px; overflow-y: auto; border: 1px solid #ccc;">
+        <div class="col-sm-8"
+            style="max-height: 600px; overflow-y: auto; border: 1px solid #ccc; border: 1px solid #ccc; -ms-overflow-style: none; scrollbar-width: none;">
             <div class="container my-3">
                 @foreach ($items as $item)
                 <div class="row bg-white mb-3 mt-3 border border-dark" style="height: 120px;">
@@ -41,12 +41,11 @@
             </div>
         </div>
 
-        <!-- Order Summary Section -->
         <div class="col-sm-4">
             <form action="{{ route('order.store') }}" method="POST" id="order-form">
                 @csrf
                 <div class="bg-secondary p-4 rounded shadow-sm bg-opacity-25"
-                    style="max-height: 600px; overflow-y: auto; border: 1px solid #ccc;">
+                    style="max-height: 600px; overflow-y: auto; border: 1px solid #ccc; max-height: 600px; overflow-y: auto; border: 1px solid #ccc; border: 1px solid #ccc; -ms-overflow-style: none; scrollbar-width: none;">
                     <h3 class="text-center mb-4">Order Summary</h3>
                     <div class="mb-4">
                         <h5>Items</h5>
@@ -90,24 +89,21 @@
 document.addEventListener('DOMContentLoaded', () => {
     const kitchenTimeInput = document.getElementById('kitchenTimeInput');
 
-    // Function to get the current date and time in the required format
     const getCurrentDateTime = () => {
         const now = new Date();
         const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+        const month = String(now.getMonth() + 1).padStart(2, '0');
         const date = String(now.getDate()).padStart(2, '0');
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
         return `${year}-${month}-${date}T${hours}:${minutes}`;
     };
 
-    // Set the minimum date and time
     kitchenTimeInput.setAttribute('min', getCurrentDateTime());
 
-    // Optionally, update the `min` attribute dynamically in case the user keeps the page open for a long time
     setInterval(() => {
         kitchenTimeInput.setAttribute('min', getCurrentDateTime());
-    }, 60000); // Update every minute
+    }, 60000);
 
     const addItemButtons = document.querySelectorAll('.add-item-btn');
     const summaryTableBody = document.getElementById('summaryItems');
@@ -117,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderForm = document.getElementById('order-form');
     let totalAmount = 0;
 
-    // Update the total amount displayed
     const updateTotalAmount = () => {
         totalAmount = Array.from(summaryTableBody.querySelectorAll('tr'))
             .reduce((sum, row) => {
@@ -128,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
         totalAmountElement.textContent = `Rs. ${totalAmount.toFixed(2)}`;
     };
 
-    // Update visibility for rows and show "Show More" link if needed
     const updateRowVisibility = () => {
         const rows = summaryTableBody.querySelectorAll('tr');
         rows.forEach((row, index) => {
@@ -137,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showMoreLink.style.display = rows.length > maxVisibleRows ? '' : 'none';
     };
 
-    // Add item to the order summary
     addItemButtons.forEach(button => {
         button.addEventListener('click', function() {
             const itemId = this.getAttribute('data-item-id');
@@ -180,14 +173,44 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Show all rows when "Show More" is clicked
     showMoreLink.addEventListener('click', (e) => {
         e.preventDefault();
         summaryTableBody.querySelectorAll('tr').forEach(row => row.style.display = '');
         showMoreLink.style.display = 'none';
     });
 
-    // Handle form submission for the order
+    const handleQuantityChange = (button, operation) => {
+        const quantityInput = button.closest('.row').querySelector('.quantity-input');
+        let quantity = parseInt(quantityInput.value);
+        if (operation === 'increase') {
+            quantity++;
+        } else if (operation === 'decrease' && quantity > 1) {
+            quantity--;
+        }
+        quantityInput.value = quantity;
+
+        const itemName = button.closest('.row').querySelector('.text-4xl').textContent.trim();
+        const row = Array.from(summaryTableBody.querySelectorAll('tr')).find(row => row.querySelector(
+            'td:first-child').textContent === itemName);
+        if (row) {
+            row.querySelector('td:nth-child(2)').textContent = quantity;
+        }
+
+        updateTotalAmount();
+    };
+
+    document.querySelectorAll('.increase-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            handleQuantityChange(this, 'increase');
+        });
+    });
+
+    document.querySelectorAll('.decrease-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            handleQuantityChange(this, 'decrease');
+        });
+    });
+
     orderForm.addEventListener('submit', (e) => {
         e.preventDefault();
 
@@ -199,9 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         });
 
-        const kitchenTime = kitchenTimeInput.value; // Get the kitchen time from the input
+        const kitchenTime = kitchenTimeInput.value;
 
-        // Ensure the totalAmount is sent properly
         if (totalAmount === 0) {
             alert('Please add at least one item to the order.');
             return;
@@ -215,8 +237,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         'content'),
                 },
                 body: JSON.stringify({
-                    amount: totalAmount.toFixed(2), // Make sure amount is included
-                    kitchen_time: kitchenTime, // Send the kitchen time
+                    amount: totalAmount.toFixed(2),
+                    kitchen_time: kitchenTime,
                     items: items,
                 }),
             })
@@ -243,7 +265,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     });
 
-    // Initialize row visibility and total amount
     updateRowVisibility();
     updateTotalAmount();
 });

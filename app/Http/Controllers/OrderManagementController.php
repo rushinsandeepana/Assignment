@@ -85,9 +85,8 @@ class OrderManagementController extends Controller
             )
             ->get();
     
-        // Group concessions by order
         $groupedOrders = $orders->groupBy('order_id')->map(function ($items) {
-            $order = $items->first(); // Get common order details
+            $order = $items->first();
             return [
                 'order_id' => $order->order_id,
                 'order_code' => $order->order_code,
@@ -103,9 +102,7 @@ class OrderManagementController extends Controller
                 })->toArray(),
             ];
         });
-    
-        // Debugging
-        // dd($groupedOrders);
+            // dd($groupedOrders);
     
         return view('order_managment.view', ['orders' => $groupedOrders]);
     }

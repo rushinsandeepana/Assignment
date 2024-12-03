@@ -325,12 +325,12 @@ return [
         [
             'text' => 'Concession Management',
             'url' => 'admin/view-concessions',
-            'icon' => 'fas fa-fw fa-user',
+            'icon' => 'fas fa-utensils',
         ],
         [
             'text' => 'Order Management',
             'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-lock',
+            'icon' => 'fas fa-briefcase',
             'submenu' => [
                 [
                     'text' => 'Add Order',
@@ -345,7 +345,7 @@ return [
         [
             'text' => 'Kitchen Management',
             'url' => 'kitchen-view',
-            'icon' => 'fas fa-fw fa-share',
+            'icon' => 'fas fa-blender',
         ],
     ],
 

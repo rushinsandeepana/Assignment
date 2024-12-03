@@ -18,7 +18,8 @@
         <div class="col-md-4 mb-4">
             <div class="card shadow-lg">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">Order ID: {{ $order['order_code'] ?? 'N/A' }}</h5>
+                    <h5 class="card-title mb-0">Order ID :
+                        {{ $order['order_code'] ?? 'N/A' }}</h5>
                 </div>
                 <div class="card-body">
                     <p><strong>Concessions:</strong></p>
@@ -45,14 +46,17 @@
                             @endif
                         </span>
                     </p>
+                    <button class="btn btn-danger delete-order-button" data-order-id="{{ $order['order_id'] }}">Delete
+                    </button>
+
                 </div>
                 <label class="position-absolute" style="bottom: 10px; right: 10px; cursor: pointer;">
                     <input type="checkbox" style="display: none;" class="roundCheckbox"
                         data-order-id="{{ $order['order_id'] }}">
                     <span class="checkbox-circle"
-                        style="display: inline-block;width: 40px;height: 40px;background-color: #f2efea;border-radius: 50%;position: relative;border: none;transition: background-color 0.3s ease;">
+                        style="display: inline-block;width: 40px;height: 40px;background-color: #007bff;border-radius: 50%;position: relative;border: none;transition: background-color 0.3s ease;">
                         <span
-                            style="content: '\f067';font-family: 'Font Awesome 5 Free';font-weight: 900;color: #0d6efd;font-size: 20px;position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);">&#xf067;</span>
+                            style="content: '\f067';font-family: 'Font Awesome 5 Free';font-weight: 900;color: white;font-size: 20px;position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);">&#xf067;</span>
                     </span>
                 </label>
             </div>
@@ -70,9 +74,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('.roundCheckbox');
     const sendOrdersButton = document.getElementById('sendOrdersButton');
-    const orders = @json($orders); // Laravel blade variable
+    const orders = @json($orders);
 
-    // Function to automatically send orders to the kitchen
     function sendToKitchen(orderIds) {
         fetch('/send-orders', {
                 method: 'POST',
@@ -87,15 +90,16 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                // Orders sent successfully, update the checkbox UI to show orders are sent
-                checkboxes.forEach((checkbox) => {
-                    const orderId = checkbox.getAttribute('data-order-id');
-                    if (orderIds.includes(orderId)) {
-                        // Mark checkbox as visually selected (change background color or style)
-                        checkbox.closest('label').style.backgroundColor =
-                        '#0d6efd'; // Example color
-                        checkbox.closest('label').style.color =
-                        '#fff'; // Change checkbox icon color to white
+                if (!Array.isArray(orderIds)) {
+                    orderIds = [orderIds];
+                }
+
+                orderIds.forEach(orderId => {
+                    const checkbox = document.querySelector(
+                        `.roundCheckbox[data-order-id="${orderId}"]`);
+                    if (checkbox) {
+                        checkbox.closest('label').style.backgroundColor = '#28a745';
+                        checkbox.closest('label').style.color = '#fff';
                     }
                 });
             })
@@ -104,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
-    // Function to automatically send orders based on kitchen time and status
     function autoSendOrders() {
         const currentTime = new Date();
         const currentTimeString = currentTime.toISOString().slice(0, 16);
@@ -129,50 +132,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // Automatically send orders that are ready based on kitchen time
             if (kitchenTime && kitchenTime <= currentTimeString) {
-                order.status = 1; // Mark order as 'In Progress'
+                order.status = 1;
 
-                sendToKitchen(order.order_id); // Send to kitchen
+                sendToKitchen(order.order_id);
 
                 const checkbox = document.querySelector(
                     `.roundCheckbox[data-order-id="${order.order_id}"]`);
-
                 if (checkbox) {
-                    checkbox.closest('label').style.backgroundColor = '#0d6efd'; // Example color
-                    checkbox.closest('label').style.color =
-                    '#fff'; // Change checkbox icon color to white
+                    checkbox.closest('label').style.backgroundColor =
+                        '#28a745';
+                    checkbox.closest('label').style.color = '#fff';
                 }
             }
 
-            // Automatically send orders based on their current status
-            if (order.status === 0) { // If order is 'Pending'
-                order.status = 1; // Change status to 'In Progress'
-                sendToKitchen(order.order_id); // Send to kitchen
+            if (order.status === 0 && (!kitchenTime || kitchenTime > currentTimeString)) {
+                order.status = 0;
             }
         });
     }
 
-    // Handle the manual checkbox clicks to send orders
+
     checkboxes.forEach((checkbox) => {
         checkbox.addEventListener('change', function() {
             const orderId = this.getAttribute('data-order-id');
+            const label = this.closest('label');
+            const circle = label.querySelector('.checkbox-circle');
             if (this.checked) {
                 sendToKitchen([orderId]);
-                // Change the color of the checkbox when checked
-                const label = this.closest('label');
-                label.style.backgroundColor = '#0d6efd'; // Example color
-                label.style.color = '#fff'; // Change checkbox icon color to white
+                circle.style.backgroundColor = '#28a745';
             } else {
-                // Reset the color when unchecked
-                const label = this.closest('label');
-                label.style.backgroundColor = '#f2efea'; // Original background color
-                label.style.color = '#0d6efd'; // Original checkbox icon color
+                circle.style.backgroundColor = '#007bff';
+                label.style.color = '#0d6efd';
             }
         });
     });
 
-    // Attach event listener to the "Send Orders" button
     sendOrdersButton.addEventListener('click', function() {
         const selectedOrders = [];
 
@@ -184,13 +179,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (selectedOrders.length > 0) {
             sendToKitchen(selectedOrders);
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
         } else {
             alert('Please select orders to send.');
         }
     });
 
-    // Check orders every minute
-    setInterval(autoSendOrders, 60000);
+    setInterval(autoSendOrders, 10000);
+});
+
+document.querySelectorAll('.delete-order-button').forEach(button => {
+    button.addEventListener('click', function() {
+        const orderId = this.getAttribute('data-order-id');
+        if (confirm('Are you sure you want to delete this order?')) {
+            fetch(`/delete-order/${orderId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                            .getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        orderId: orderId
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Order deleted successfully!');
+                        this.closest('.col-md-4').remove();
+                    } else {
+                        alert('An error occurred while deleting the order.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting order:', error);
+                    alert('An error occurred while deleting the order.');
+                });
+        }
+    });
 });
 </script>
+
 @endsection

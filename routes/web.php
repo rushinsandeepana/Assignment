@@ -36,7 +36,11 @@ Route::middleware('auth')->group(function () {
     //handle kitchen management
     Route::get('/kitchen-view', [KitchenManagementController::class, 'view'])->name('kitchen.view');
     Route::post('/send-orders', [KitchenManagementController::class, 'sendToKitchen']);
-    Route::post('/order/{orderId}/complete', [KitchenManagementController::class, 'toggleStatus'])->name('order.complete');
+    Route::post('/order/{orderId}/complete', [KitchenManagementController::class, 'markAsCompleted'])->name('order.complete');
+    Route::delete('/delete-order/{orderId}', [KitchenManagementController::class, 'deleteOrder'])->name('orders.delete');
+
+
+
 
 });
 

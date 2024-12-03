@@ -31,14 +31,12 @@ class KitchenManagementController extends Controller
     {
         $orderIds = $request->input('order_ids', []);
     
-        // Validate orders
         if (empty($orderIds)) {
             return response()->json(['success' => false, 'message' => 'No orders provided.']);
         }
     
-        // Update orders in bulk to "In Progress" status
         $updatedCount = Orders::whereIn('id', $orderIds)
-            ->where('status', '!=', 1) // Optional: Update only if not already "In Progress"
+            ->where('status', '!=', 1)
             ->update(['status' => 1]);
     
         if ($updatedCount > 0) {
@@ -93,16 +91,27 @@ class KitchenManagementController extends Controller
     }
 
     public function markAsCompleted($orderId)
+    {
+        $order = Orders::find($orderId);
+
+        if ($order && $order->status == 1) {
+            $order->status = 2;
+            $order->save();
+            return redirect()->back()->with('success', 'Order marked as completed.');
+        }
+
+        return redirect()->back()->with('error', 'Order cannot be completed at this stage.');
+    }
+    
+    public function deleteOrder($orderId)
 {
     $order = Orders::find($orderId);
-
-    if ($order && $order->status == 1) {
-        $order->status = 2;
-        $order->save();
-        return redirect()->back()->with('success', 'Order marked as completed.');
+    if ($order) {
+        $order->delete();
+        return response()->json(['success' => true]);
     }
-
-    return redirect()->back()->with('error', 'Order cannot be completed at this stage.');
+    return response()->json(['success' => false, 'message' => 'Order not found'], 404);
 }
+
     
 }

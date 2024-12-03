@@ -69,9 +69,8 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('.roundCheckbox');
+    const sendOrdersButton = document.getElementById('sendOrdersButton');
     const orders = @json($orders); // Laravel blade variable
-    console.log("Is orders an array?", Array.isArray(orders));
-    console.log("Orders type:", typeof orders);
 
     // Function to automatically send orders to the kitchen
     function sendToKitchen(orderIds) {
@@ -88,14 +87,15 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                // No alert needed, orders sent automatically
+                // Orders sent successfully, update the checkbox UI to show orders are sent
                 checkboxes.forEach((checkbox) => {
                     const orderId = checkbox.getAttribute('data-order-id');
                     if (orderIds.includes(orderId)) {
-                        checkbox.disabled = true;
-                        const card = checkbox.closest('.card');
-                        card.style.opacity = '0.6';
-                        card.style.pointerEvents = 'none';
+                        // Mark checkbox as visually selected (change background color or style)
+                        checkbox.closest('label').style.backgroundColor =
+                        '#0d6efd'; // Example color
+                        checkbox.closest('label').style.color =
+                        '#fff'; // Change checkbox icon color to white
                     }
                 });
             })
@@ -104,10 +104,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
 
+    // Function to automatically send orders based on kitchen time and status
     function autoSendOrders() {
         const currentTime = new Date();
         const currentTimeString = currentTime.toISOString().slice(0, 16);
-        console.log("Current Time:", currentTimeString);
 
         Object.keys(orders).forEach(orderKey => {
             const order = orders[orderKey];
@@ -129,26 +129,65 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            console.log("Kitchen Time for Order ID " + order.order_id + ":", kitchenTime);
+            // Automatically send orders that are ready based on kitchen time
+            if (kitchenTime && kitchenTime <= currentTimeString) {
+                order.status = 1; // Mark order as 'In Progress'
 
-            if (kitchenTime && kitchenTime === currentTimeString) {
-                order.status = 1; // Update the order status to 'sent_to_kitchen'
+                sendToKitchen(order.order_id); // Send to kitchen
 
-                // Send the order to the kitchen automatically
-                sendToKitchen(order.order_id);
-
-                // Disable checkbox and update card UI
                 const checkbox = document.querySelector(
                     `.roundCheckbox[data-order-id="${order.order_id}"]`);
+
                 if (checkbox) {
-                    checkbox.disabled = true;
-                    const card = checkbox.closest('.card');
-                    card.style.opacity = '0.6';
-                    card.style.pointerEvents = 'none';
+                    checkbox.closest('label').style.backgroundColor = '#0d6efd'; // Example color
+                    checkbox.closest('label').style.color =
+                    '#fff'; // Change checkbox icon color to white
                 }
+            }
+
+            // Automatically send orders based on their current status
+            if (order.status === 0) { // If order is 'Pending'
+                order.status = 1; // Change status to 'In Progress'
+                sendToKitchen(order.order_id); // Send to kitchen
             }
         });
     }
+
+    // Handle the manual checkbox clicks to send orders
+    checkboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', function() {
+            const orderId = this.getAttribute('data-order-id');
+            if (this.checked) {
+                sendToKitchen([orderId]);
+                // Change the color of the checkbox when checked
+                const label = this.closest('label');
+                label.style.backgroundColor = '#0d6efd'; // Example color
+                label.style.color = '#fff'; // Change checkbox icon color to white
+            } else {
+                // Reset the color when unchecked
+                const label = this.closest('label');
+                label.style.backgroundColor = '#f2efea'; // Original background color
+                label.style.color = '#0d6efd'; // Original checkbox icon color
+            }
+        });
+    });
+
+    // Attach event listener to the "Send Orders" button
+    sendOrdersButton.addEventListener('click', function() {
+        const selectedOrders = [];
+
+        checkboxes.forEach((checkbox) => {
+            if (checkbox.checked) {
+                selectedOrders.push(checkbox.getAttribute('data-order-id'));
+            }
+        });
+
+        if (selectedOrders.length > 0) {
+            sendToKitchen(selectedOrders);
+        } else {
+            alert('Please select orders to send.');
+        }
+    });
 
     // Check orders every minute
     setInterval(autoSendOrders, 60000);

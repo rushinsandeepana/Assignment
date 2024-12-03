@@ -12,32 +12,27 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Item Selection Section -->
-        <div class="col-sm-8"
-            style="max-height: 600px; overflow-y: auto; border: 1px solid #ccc; scrollbar-width: none; -ms-overflow-style: none;">
+        <div class="col-sm-8" style="max-height: 600px; overflow-y: auto; border: 1px solid #ccc;">
             <div class="container my-3">
-                <!-- Card 1: Item Listing -->
                 @foreach ($items as $item)
                 <div class="row bg-white mb-3 mt-3 border border-dark" style="height: 120px;">
                     <div class="col">
                         <img src="{{ $item->image ? asset('storage/' . $item->image) : asset('assets/default-image.jpg') }}"
-                            class="img-fluid" alt="Full-size image"
-                            style="width: 300px; height: 118px; object-fit: cover;">
+                            class="img-fluid" alt="Item Image" style="width: 300px; height: 118px; object-fit: cover;">
                     </div>
-
                     <div class="col d-flex align-items-center justify-content-center text-4xl font-weight-bold">
                         {{ $item->name }}
                     </div>
                     <div class="col d-flex align-items-center justify-content-center">
                         Rs. {{ $item->price }}
                     </div>
-                    <div class="d-flex align-items-center">
+                    <div class="col d-flex align-items-center">
                         <button class="btn btn-primary p-2 decrease-btn">-</button>
                         <input type="number" class="form-control mx-2 quantity-input" value="1" min="1"
                             style="width: 60px;">
                         <button class="btn btn-primary p-2 increase-btn">+</button>
                     </div>
-
-                    <div class="col d-flex flex-column align-items-center justify-content-center p-3">
+                    <div class="col d-flex flex-column align-items-center justify-content-center">
                         <button class="btn btn-success mb-2 add-item-btn" data-item-id="{{ $item->id }}"
                             data-item-name="{{ $item->name }}" data-item-price="{{ $item->price }}">Add</button>
                     </div>
@@ -48,13 +43,11 @@
 
         <!-- Order Summary Section -->
         <div class="col-sm-4">
-            <form action="{{ route('order.store') }}" method="POST" enctype="multipart/form-data" id="order-form">
+            <form action="{{ route('order.store') }}" method="POST" id="order-form">
                 @csrf
                 <div class="bg-secondary p-4 rounded shadow-sm bg-opacity-25"
-                    style="max-height: 600px; overflow-y: auto; border: 1px solid #ccc; scrollbar-width: none; -ms-overflow-style: none;">
+                    style="max-height: 600px; overflow-y: auto; border: 1px solid #ccc;">
                     <h3 class="text-center mb-4">Order Summary</h3>
-
-                    <!-- Items Summary Table -->
                     <div class="mb-4">
                         <h5>Items</h5>
                         <div class="table-responsive">
@@ -67,25 +60,20 @@
                                         <th>Action</th>
                                     </tr>
                                 </thead>
-                                <tbody id="summaryItems" required></tbody>
+                                <tbody id="summaryItems"></tbody>
                             </table>
                         </div>
                         <a href="#" class="text-primary" id="showMoreLink" style="display:none;">Show More</a>
                     </div>
-
-                    <!-- Kitchen Time Section -->
                     <div class="mb-4">
                         <h5>Kitchen Time</h5>
-                        <input type="datetime-local" name="kitchen_time" class="form-control" required>
+                        <input type="datetime-local" name="kitchen_time" class="form-control" id="kitchenTimeInput"
+                            required>
                     </div>
-
-                    <!-- Total Amount Section -->
                     <div class="mb-4">
                         <h5>Total Amount</h5>
                         <p><strong id="totalAmount">Rs. 0</strong></p>
                     </div>
-
-                    <!-- Submit Order Button -->
                     <div class="text-center">
                         <button type="submit" class="btn btn-success btn-lg w-100" id="submitOrderBtn">ADD
                             ORDER</button>
@@ -100,6 +88,27 @@
 @section('js')
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const kitchenTimeInput = document.getElementById('kitchenTimeInput');
+
+    // Function to get the current date and time in the required format
+    const getCurrentDateTime = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+        const date = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${date}T${hours}:${minutes}`;
+    };
+
+    // Set the minimum date and time
+    kitchenTimeInput.setAttribute('min', getCurrentDateTime());
+
+    // Optionally, update the `min` attribute dynamically in case the user keeps the page open for a long time
+    setInterval(() => {
+        kitchenTimeInput.setAttribute('min', getCurrentDateTime());
+    }, 60000); // Update every minute
+
     const addItemButtons = document.querySelectorAll('.add-item-btn');
     const summaryTableBody = document.getElementById('summaryItems');
     const showMoreLink = document.getElementById('showMoreLink');
@@ -190,7 +199,14 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         });
 
-        const kitchenTime = document.querySelector('input[type="datetime-local"]').value;
+        const kitchenTime = kitchenTimeInput.value; // Get the kitchen time from the input
+
+        // Ensure the totalAmount is sent properly
+        if (totalAmount === 0) {
+            alert('Please add at least one item to the order.');
+            return;
+        }
+
         fetch('/orders', {
                 method: 'POST',
                 headers: {
@@ -199,8 +215,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         'content'),
                 },
                 body: JSON.stringify({
-                    amount: totalAmount.toFixed(2),
-                    kitchen_time: kitchenTime,
+                    amount: totalAmount.toFixed(2), // Make sure amount is included
+                    kitchen_time: kitchenTime, // Send the kitchen time
                     items: items,
                 }),
             })
